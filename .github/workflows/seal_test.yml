@@ -1,4 +1,4 @@
-name: Seal Security Scan (Local Fix Mode)
+name: Seal Security Scan (Fix Mode - Local)
 
 on:
   push:
@@ -27,5 +27,5 @@ jobs:
         with:
           mode: fix
           fix_mode: local
-          token: ${{ secrets.SEAL_API_TOKEN }}
-          project: ${{ secrets.SEAL_PROJECT_ID }}
+          token: YOUR_SEAL_API_TOKEN_HERE
+          project: YOUR_SEAL_PROJECT_ID_HERE
