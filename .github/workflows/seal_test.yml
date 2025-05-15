@@ -1,19 +1,21 @@
-name: Seal Audit (No Signup)
+name: Seal Scan (No Signup)
 
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  seal-audit:
+  seal-scan:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Download and run Seal CLI (audit only)
+    - name: Download and run Seal CLI in scan mode
       run: |
         curl -sSfL https://github.com/seal-community/cli/releases/download/latest/seal-linux-amd64-latest -o seal
         chmod +x seal
-        ./seal audit -r requirements.txt
+        ./seal scan --fs requirements.txt
