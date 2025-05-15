@@ -1,34 +1,20 @@
-name: Seal Security Scan
+name: Seal Audit (No Signup)
 
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
 
 jobs:
-  seal:
+  seal-audit:
     runs-on: ubuntu-latest
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
-
-    - name: Download and install Seal CLI (official method)
+    - name: Download and run Seal CLI
       run: |
-        curl -sSfL https://github.com/sealsecurity/seal-cli/releases/latest/download/seal-linux-amd64.tar.gz -o seal.tar.gz
+        curl -sSfL https://github.com/seal-community/seal-cli/releases/latest/download/seal-linux-amd64.tar.gz -o seal.tar.gz
         mkdir -p seal-cli
         tar -xzf seal.tar.gz -C seal-cli
         chmod +x seal-cli/seal
-        echo "$(pwd)/seal-cli" >> $GITHUB_PATH
-
-    - name: Run Seal patch
-      run: seal patch -r requirements.txt -o patched_requirements.txt
-
-    - name: Show patched file
-      run: cat patched_requirements.txt
+        seal-cli/seal audit -r requirements.txt
