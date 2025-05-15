@@ -7,14 +7,13 @@ on:
 jobs:
   seal-audit:
     runs-on: ubuntu-latest
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Download and run Seal CLI
+    - name: Download and run Seal CLI (audit only)
       run: |
-        curl -sSfL https://github.com/seal-community/seal-cli/releases/latest/download/seal-linux-amd64.tar.gz -o seal.tar.gz
-        mkdir -p seal-cli
-        tar -xzf seal.tar.gz -C seal-cli
-        chmod +x seal-cli/seal
-        seal-cli/seal audit -r requirements.txt
+        curl -sSfL https://github.com/seal-community/cli/releases/download/latest/seal-linux-amd64-latest -o seal
+        chmod +x seal
+        ./seal audit -r requirements.txt
