@@ -1,4 +1,4 @@
-name: Seal Scan (Audit Mode)
+name: Seal Audit (No Token)
 
 on:
   push:
@@ -14,8 +14,9 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Download and run Seal CLI in scan mode
+    - name: Download and run Seal CLI
       run: |
         curl -sSfL https://github.com/seal-community/cli/releases/download/latest/seal-linux-amd64-latest -o seal
         chmod +x seal
+        ls -la                          # 🧪 Sanity check: confirm requirements.txt is there
         ./seal scan --fs python:requirements.txt
