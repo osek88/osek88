@@ -1,4 +1,4 @@
-name: Seal Audit (No Token)
+name: Seal Fix Dry Run (Python)
 
 on:
   push:
@@ -7,16 +7,17 @@ on:
     branches: [ main ]
 
 jobs:
-  seal-scan:
+  seal-test:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Download and run Seal CLI
+    - name: Download and run Seal fix (dry run)
       run: |
         curl -sSfL https://github.com/seal-community/cli/releases/download/latest/seal-linux-amd64-latest -o seal
         chmod +x seal
-        ls -la                          # 🧪 Sanity check: confirm requirements.txt is there
-        ./seal scan --fs python:requirements.txt
+        ls -la
+        cat requirements.txt
+        ./seal fix --dry-run --file requirements.txt
