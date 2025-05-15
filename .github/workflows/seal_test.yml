@@ -1,4 +1,4 @@
-name: Seal Fix Dry Run (Python)
+name: Seal Local Fix (Python Audit)
 
 on:
   push:
@@ -7,17 +7,21 @@ on:
     branches: [ main ]
 
 jobs:
-  seal-test:
+  seal-audit:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Download and run Seal fix (dry run)
+    - name: Display project structure
+      run: ls -la
+
+    - name: Show requirements.txt content
+      run: cat requirements.txt
+
+    - name: Download and run Seal CLI (local mode)
       run: |
         curl -sSfL https://github.com/seal-community/cli/releases/download/latest/seal-linux-amd64-latest -o seal
         chmod +x seal
-        ls -la
-        cat requirements.txt
-        ./seal fix --dry-run --file requirements.txt
+        ./seal fix . --mode local
