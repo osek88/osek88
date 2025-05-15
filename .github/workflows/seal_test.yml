@@ -3,18 +3,29 @@ name: Seal Security Scan
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   seal:
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v3
-    - name: Setup Python
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.9'
+
     - name: Install Seal CLI
       run: |
         curl -sSfL https://seal.sh/install | sh
-    - name: Run Seal
-      run: ./seal patch -r requirements.txt -o patched_requirements.txt
+        echo "$HOME/.seal/bin" >> $GITHUB_PATH
+
+    - name: Run Seal patch
+      run: seal patch -r requirements.txt -o patched_requirements.txt
+
+    - name: Show patched file
+      run: cat patched_requirements.txt
