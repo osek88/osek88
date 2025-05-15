@@ -19,13 +19,15 @@ jobs:
       with:
         python-version: '3.9'
 
-    - name: Install Seal CLI
+    - name: Install pipx and Seal CLI
       run: |
-        curl -sSfL https://seal.sh/install | sh
-        echo "$HOME/.seal/bin" >> $GITHUB_PATH
+        python -m pip install --upgrade pip
+        python -m pip install pipx
+        pipx ensurepath
+        pipx install seal-seal
 
     - name: Run Seal patch
-      run: seal patch -r requirements.txt -o patched_requirements.txt
+      run: ~/.local/bin/seal patch -r requirements.txt -o patched_requirements.txt
 
     - name: Show patched file
       run: cat patched_requirements.txt
