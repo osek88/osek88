@@ -74,7 +74,7 @@ jobs:
         run: |
           pip install cyclonedx-bom
           mkdir -p scan-output
-          cyclonedx-py -i requirements.txt -o scan-output/bom.json
+          cyclonedx-py requirements -i requirements.txt -o scan-output/bom.json
 
       # -- ATTACH SBOM TO BUILD INFO --
       - name: Attach SBOM to Build Info
