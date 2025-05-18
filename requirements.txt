@@ -1,8 +1,23 @@
-flask==1.1.2
-requests==2.19.0
-urllib3==1.23
-idna==2.7
-setuptools==58.1.0
-jinja2==2.10.1           # CVE-2019-10906
-markupsafe==1.1.1        # CVE-2021-23214, CVE-2021-23336
-pyyaml==5.1              # CVE-2020-14343
+# 🔒 Seal provides a sealed fix for this (e.g., flask.sealed)
+flask==1.1.2                        # CVE-2023-30861
+
+# 🔒 Seal provides sealed versions for this CVE (transitive of requests)
+urllib3==1.23                      # 7 vulnerabilities
+
+# 🔒 Seal provides sealed fix
+idna==2.7                          # CVE-2024-3651
+
+# 🔒 Seal provides sealed fix
+setuptools==58.1.0                # 2 vulnerabilities
+
+# 🔒 Seal provides sealed fix
+PyYAML==5.1                        # CVE-2020-14343, unsafe load()
+
+# 🔒 Seal provides sealed fix
+Jinja2==2.10.1                     # CVE-2019-10906 + others
+
+# 🕒 In preparation (Seal fix in progress – don't remove)
+requests==2.19.0                   # CVE-2018-18074, CVE-2018-18077
+
+# 🛠️ Optionally test Werkzeug if you want to include more Flask dependencies
+werkzeug==2.1.2                   # 6 vulnerabilities
