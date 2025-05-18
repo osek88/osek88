@@ -1,4 +1,4 @@
-name: Seal + Xray Docker Scan
+name: Seal + Xray Docker Scan with Seal Fix Mode
 
 on:
   push:
@@ -16,15 +16,42 @@ env:
 jobs:
   docker-security:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # ✅ Run Seal Security in Fix Mode (Local)
+      - name: Run Seal CLI - Fix Mode (Local)
+        uses: seal-community/cli-action@latest
+        with:
+          mode: fix
+          fix_mode: local
+          token: ${{ secrets.SEAL_API_TOKEN }}
+          project: ${{ secrets.SEAL_PROJECT_ID }}
+
+      # ✅ Build Docker Image after patching with Seal
+      - name: Build Docker Image
+        run: |
+          echo "🐳 Building Docker image..."
+          docker build -t cpart.jfrog.io/seal-docker-demo/seal-poc:${{ github.run_number }} .
+
+      # ✅ Setup JFrog CLI
       - uses: jfrog/setup-jfrog-cli@v4
         with:
           version: latest
 
-      - name: Configure JFrog CLI with Username and Token
+      - name: Configure JFrog CLI
         run: |
           jf config add my-server \
             --url=${{ secrets.JF_URL }} \
@@ -33,21 +60,8 @@ jobs:
             --interactive=false
           jf config use my-server
 
-      - name: Build Docker Image
-        run: |
-          echo "🐳 Building Docker image..."
-          docker build -t cpart.jfrog.io/seal-docker-demo/seal-poc:${{ github.run_number }} .
-
-      - name: Scan Docker Image with Xray (Local)
-        run: |
-          echo "🔍 Running Docker scan with Xray..."
-          jf docker scan cpart.jfrog.io/seal-docker-demo/seal-poc:${{ github.run_number }} \
-            --licenses --format=json --vuln --project seal-scan \
-            --build-name=${{ env.JFROG_CLI_BUILD_NAME }} \
-            --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} \
-            --server-id=my-server || echo "🟡 Warnings found"
-
-      - name: Push Docker Image to Artifactory
+      # ✅ Push Docker Image to Artifactory
+      - name: Upload Docker Image to Artifactory
         run: |
           echo "📦 Pushing Docker image to Artifactory..."
           jf rt docker-push cpart.jfrog.io/seal-docker-demo/seal-poc:${{ github.run_number }} seal-docker-demo \
@@ -55,14 +69,9 @@ jobs:
             --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} \
             --server-id=my-server
 
-      - name: Publish Build Info
+      # ✅ Publish Build Info
+      - name: Publish Build Info to Artifactory
         run: |
           echo "🚀 Publishing build info to Artifactory..."
           jf rt build-publish ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }} \
-            --server-id=my-server
-
-      - name: Trigger Xray Build Scan
-        run: |
-          echo "🛡️ Scanning build with Xray..."
-          jf build-scan ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }} \
             --server-id=my-server
