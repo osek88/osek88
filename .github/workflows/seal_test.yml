@@ -60,14 +60,31 @@ jobs:
             --interactive=false
           jf config use my-server
 
+      # -- UPLOAD TO ARTIFACTORY --
       - name: Upload ZIP Artifact to Artifactory
         run: |
-          echo "🚀 Uploading seal-poc.zip to Artifactory with build info..."
+          echo "🚀 Uploading seal-poc.zip to Artifactory..."
           jf rt upload "seal-poc.zip" demo-seal/seal-poc/seal-poc-${{ github.run_number }}.zip \
             --build-name=${{ env.JFROG_CLI_BUILD_NAME }} \
             --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} \
             --server-id=my-server
 
+      # -- GENERATE SBOM (CycloneDX) FROM requirements.txt --
+      - name: Generate SBOM from Python requirements.txt
+        run: |
+          pip install cyclonedx-bom
+          mkdir -p scan-output
+          cyclonedx-py -i requirements.txt -o scan-output/bom.json
+
+      # -- ATTACH SBOM TO BUILD INFO --
+      - name: Attach SBOM to Build Info
+        run: |
+          jf rt build-add-dependencies scan-output/bom.json \
+            --build-name=${{ env.JFROG_CLI_BUILD_NAME }} \
+            --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} \
+            --server-id=my-server
+
+      # -- PUBLISH FULL BUILD INFO TO ARTIFACTORY/XRAY --
       - name: Publish Build Info to Artifactory
         run: |
           echo "📦 Publishing build info to Artifactory..."
