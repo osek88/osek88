@@ -52,7 +52,7 @@ jobs:
       - name: Upload ZIP Artifact to Artifactory
         run: |
           echo "🚀 Uploading seal-poc.zip to Artifactory..."
-          jf rt upload "seal-poc.zip" demo-seal/seal-poc/seal-poc-${{ github.run_number }}.zip \
+          jf rt upload seal-poc.zip demo-seal/seal-poc/seal-poc-${{ github.run_number }}.zip \
             --build-name=${{ env.JFROG_CLI_BUILD_NAME }} \
             --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} \
             --server-id=my-server
@@ -92,12 +92,12 @@ jobs:
             echo "⚠️ Failed to generate scan results file"
           fi
       
-      # -- UPLOAD SBOM TO ARTIFACTORY --
+      # -- UPLOAD SBOM TO ARTIFACTORY (FIXED COMMAND) --
       - name: Upload SBOM to Artifactory
         run: |
           echo "📤 Uploading SBOM directly to Artifactory..."
-          # Upload the SBOM as a separate artifact
-          jf rt upload "scan-output/bom.json" demo-seal/sboms/python-code-security-${{ github.run_number }}-sbom.json \
+          # Fixed command syntax - removed quotes where not needed
+          jf rt upload scan-output/bom.json demo-seal/sboms/python-code-security-${{ github.run_number }}-sbom.json \
             --build-name=${{ env.JFROG_CLI_BUILD_NAME }} \
             --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} \
             --server-id=my-server \
