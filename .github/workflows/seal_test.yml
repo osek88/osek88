@@ -65,4 +65,4 @@ jobs:
       - name: Upload ZIP Artifact to Artifactory
         run: |
           echo "🚀 Uploading seal-poc.zip to Artifactory..."
-          jf rt upload "seal-poc.zip" demo-seal/seal-poc/seal-poc.zip
+          jf rt upload "seal-poc.zip" demo-seal/seal-poc/seal-poc.zip --server-id=my-server
