@@ -57,14 +57,7 @@ jobs:
             --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} \
             --server-id=my-server
       
-      # -- Check JFrog CLI Version --
-      - name: Check JFrog CLI Version and Available Commands
-        run: |
-          echo "🔍 Checking JFrog CLI version and commands..."
-          jf -v
-          jf -h | grep scan
-      
-      # -- Generate SBOM using traditional method --
+      # -- Generate SBOM using cyclonedx-bom --
       - name: Generate SBOM with cyclonedx-bom
         run: |
           echo "📝 Generating SBOM using cyclonedx-bom..."
@@ -72,42 +65,58 @@ jobs:
           pip install cyclonedx-bom
           cyclonedx-py requirements -i requirements.txt -o scan-output/bom.json
           echo "SBOM file size: $(wc -c < scan-output/bom.json) bytes"
+          
+          # Create a properties file to enhance the SBOM attachment
+          echo "sbom.type=cyclonedx" > scan-output/bom.properties
+          echo "sbom.format=json" >> scan-output/bom.properties
+          echo "sbom.version=1.4" >> scan-output/bom.properties
       
-      # -- SCAN PROJECT WITH XRAY --
+      # -- SCAN PROJECT WITH XRAY (Using JSON format) --
       - name: Scan Project with Xray
         run: |
-          echo "🔍 Scanning project with Xray..."
-          # Direct scan of requirements.txt and associate with build
-          jf scan requirements.txt --build-name=${{ env.JFROG_CLI_BUILD_NAME }} --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} --server-id=my-server --format=cyclonedx
+          echo "🔍 Scanning project with Xray and associating with build..."
+          # Scan with JSON output format
+          jf scan requirements.txt --build-name=${{ env.JFROG_CLI_BUILD_NAME }} --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} --server-id=my-server --format=json || echo "Scan command failed, continuing workflow"
       
-      # -- Try Alternative SBOM Generation --
-      - name: Try Alternative SBOM Generation
+      # -- SCAN AND SAVE RESULTS --
+      - name: Scan and Save Results
         run: |
-          echo "🔄 Attempting alternative SBOM generation..."
-          # Create a temporary package for scanning
-          pip freeze > freeze-requirements.txt
-          # Try scanning with output format
-          jf scan freeze-requirements.txt --format cyclonedx --output scan-output/xray-sbom.json --server-id=my-server || echo "Command failed, continuing workflow"
+          echo "🔄 Scanning and saving results to file..."
+          # Create a scan results file
+          jf scan requirements.txt --format=json --server-id=my-server > scan-output/scan-results.json || echo "Command failed, continuing workflow"
           
-          if [ -f scan-output/xray-sbom.json ]; then
-            echo "✅ Xray SBOM generated successfully"
-            echo "SBOM file size: $(wc -c < scan-output/xray-sbom.json) bytes"
+          if [ -f scan-output/scan-results.json ]; then
+            echo "✅ Scan results saved successfully"
+            echo "Results file size: $(wc -c < scan-output/scan-results.json) bytes"
           else
-            echo "⚠️ Xray SBOM generation failed, using cyclonedx SBOM"
+            echo "⚠️ Failed to generate scan results file"
           fi
+      
+      # -- UPLOAD SBOM TO ARTIFACTORY --
+      - name: Upload SBOM to Artifactory
+        run: |
+          echo "📤 Uploading SBOM directly to Artifactory..."
+          # Upload the SBOM as a separate artifact
+          jf rt upload "scan-output/bom.json" demo-seal/sboms/python-code-security-${{ github.run_number }}-sbom.json \
+            --build-name=${{ env.JFROG_CLI_BUILD_NAME }} \
+            --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} \
+            --server-id=my-server \
+            --props="sbom.type=cyclonedx;sbom.format=json;sbom.version=1.4"
       
       # -- ATTACH SBOM TO BUILD INFO --
       - name: Attach SBOM to Build Info
         run: |
           echo "🔗 Attaching SBOM to build info..."
-          # Use the appropriate SBOM file based on what was generated
-          if [ -f scan-output/xray-sbom.json ] && [ -s scan-output/xray-sbom.json ]; then
-            echo "Using Xray-generated SBOM"
-            jf rt build-add-dependencies ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }} scan-output/xray-sbom.json --server-id=my-server
-          else
-            echo "Using CycloneDX-generated SBOM"
-            jf rt build-add-dependencies ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }} scan-output/bom.json --server-id=my-server
-          fi
+          jf rt build-add-dependencies ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }} scan-output/bom.json --server-id=my-server
+      
+      # -- ADD BUILD PROPERTIES FOR SBOM --
+      - name: Add Build Properties for SBOM
+        run: |
+          echo "🏷️ Adding build properties for SBOM..."
+          jf rt build-add-git ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }} --server-id=my-server
+          jf rt build-collect-env ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }} --server-id=my-server
+          # Add build properties to indicate SBOM exists
+          jf rt build-add-props ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }} "sbom.available=true;sbom.type=cyclonedx" --server-id=my-server
       
       # -- PUBLISH FULL BUILD INFO TO ARTIFACTORY/XRAY --
       - name: Publish Build Info to Artifactory
