@@ -5,8 +5,7 @@ werkzeug==2.1.2                     # 🔧 6 vulnerabilities
 setuptools==58.1.0                 # 🔒 2 vulnerabilities
 urllib3==1.23                       # 🔒 7 vulnerabilities
 idna==2.7                           # 🔒 CVE-2024-3651
-#PyYAML==5.1                         # 🔒 CVE-2020-14343
-PyYAML==5.1+sp1
+PyYAML==5.1                         # 🔒 CVE-2020-14343
 requests==2.19.0                    # 🕒 In preparation (CVE-2018-18074, etc.)
 python-multipart==0.0.6            # 🔒 3 vulnerabilities (file handling)
 ipython==7.34.0                    # 🔒 CVE-2023-24816
