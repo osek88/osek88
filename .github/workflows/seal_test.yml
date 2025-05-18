@@ -79,10 +79,8 @@ jobs:
       # -- ATTACH SBOM TO BUILD INFO --
       - name: Attach SBOM to Build Info
         run: |
-          jf rt build-add-dependencies scan-output/bom.json \
-            --build-name=${{ env.JFROG_CLI_BUILD_NAME }} \
-            --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} \
-            --server-id=my-server
+          jf rt build-add-dependencies scan-output/bom.json --build-name=${{ env.JFROG_CLI_BUILD_NAME }} --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} --server-id=my-server
+
 
       # -- PUBLISH FULL BUILD INFO TO ARTIFACTORY/XRAY --
       - name: Publish Build Info to Artifactory
