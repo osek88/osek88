@@ -56,19 +56,44 @@ jobs:
             --build-name=${{ env.JFROG_CLI_BUILD_NAME }} \
             --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} \
             --server-id=my-server
-      # -- GENERATE SBOM (CycloneDX) FROM requirements.txt --
-      - name: Generate SBOM from Python requirements.txt
+      
+      # -- GENERATE SBOM using JFrog's Native Tool --
+      - name: Generate SBOM using JFrog CLI
         run: |
-          pip install cyclonedx-bom
+          echo "📝 Generating SBOM using JFrog's native tool..."
           mkdir -p scan-output
-          cyclonedx-py requirements -i requirements.txt -o scan-output/bom.json
+          # Use JFrog's audit-dependencies command to generate SBOM for Python project
+          jf audit-dependencies python --project "." --output "scan-output/jfrog-sbom.json" --server-id=my-server
+      
+      # -- Debug: Check SBOM file --
+      - name: Verify SBOM Content
+        run: |
+          echo "🔍 Verifying SBOM content..."
+          if [ -f scan-output/jfrog-sbom.json ]; then
+            echo "SBOM file exists"
+            echo "SBOM file size: $(wc -c < scan-output/jfrog-sbom.json) bytes"
+            echo "First 100 characters of SBOM:"
+            head -c 100 scan-output/jfrog-sbom.json
+          else
+            echo "⚠️ SBOM file not found!"
+            ls -la scan-output/
+          fi
+      
       # -- ATTACH SBOM TO BUILD INFO --
       - name: Attach SBOM to Build Info
         run: |
-          jf rt build-add-dependencies ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }} scan-output/bom.json --server-id=my-server
+          echo "🔗 Attaching SBOM to build info..."
+          jf rt build-add-dependencies ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }} scan-output/jfrog-sbom.json --server-id=my-server
+      
       # -- PUBLISH FULL BUILD INFO TO ARTIFACTORY/XRAY --
       - name: Publish Build Info to Artifactory
         run: |
           echo "📦 Publishing build info to Artifactory..."
           jf rt build-publish ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }} \
             --server-id=my-server
+            
+      # -- USE XRAY TO SCAN BUILD DIRECTLY --
+      - name: Scan Build with Xray
+        run: |
+          echo "🔍 Scanning build with Xray..."
+          jf build-scan ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }} --server-id=my-server
