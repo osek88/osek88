@@ -1,46 +1,30 @@
-name: Python Code Security (Seal + Xray ZIP Upload)
+name: Seal + Xray Docker Scan
+
 on:
   push:
     branches: ["main"]
   workflow_dispatch:
+
 permissions:
   contents: read
+
 env:
-  JFROG_CLI_BUILD_NAME: python-code-security
+  JFROG_CLI_BUILD_NAME: seal-docker-security
   JFROG_CLI_BUILD_NUMBER: ${{ github.run_number }}
   JF_URL: ${{ secrets.JF_URL }}
+
 jobs:
-  security-scan:
+  docker-security:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      # -- SEAL SECURITY FIX MODE --
-      - name: Run Seal CLI - Fix Mode (Local)
-        uses: seal-community/cli-action@latest
-        with:
-          mode: fix
-          fix_mode: local
-          token: ${{ secrets.SEAL_API_TOKEN }}
-          project: ${{ secrets.SEAL_PROJECT_ID }}
-      # -- PACKAGE AS ZIP --
-      - name: Create ZIP Artifact
-        run: |
-          echo "📦 Zipping Python files and requirements..."
-          zip -r seal-poc.zip app.py requirements.txt README.md
-      # -- SETUP JFROG CLI --
+
       - uses: jfrog/setup-jfrog-cli@v4
         with:
           version: latest
-      - name: Configure JFrog CLI with username + token
+
+      - name: Configure JFrog CLI with Username and Token
         run: |
           jf config add my-server \
             --url=${{ secrets.JF_URL }} \
@@ -48,82 +32,37 @@ jobs:
             --password=${{ secrets.JFROG_PASSWORD }} \
             --interactive=false
           jf config use my-server
-      # -- UPLOAD TO ARTIFACTORY --
-      - name: Upload ZIP Artifact to Artifactory
+
+      - name: Build Docker Image
         run: |
-          echo "🚀 Uploading seal-poc.zip to Artifactory..."
-          jf rt upload seal-poc.zip demo-seal/seal-poc/seal-poc-${{ github.run_number }}.zip \
+          echo "🐳 Building Docker image..."
+          docker build -t cpart.jfrog.io/seal-docker-demo/seal-poc:${{ github.run_number }} .
+
+      - name: Scan Docker Image with Xray (Local)
+        run: |
+          echo "🔍 Running Docker scan with Xray..."
+          jf docker scan cpart.jfrog.io/seal-docker-demo/seal-poc:${{ github.run_number }} \
+            --licenses --format=json --vuln --project seal-scan \
+            --build-name=${{ env.JFROG_CLI_BUILD_NAME }} \
+            --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} \
+            --server-id=my-server || echo "🟡 Warnings found"
+
+      - name: Push Docker Image to Artifactory
+        run: |
+          echo "📦 Pushing Docker image to Artifactory..."
+          jf rt docker-push cpart.jfrog.io/seal-docker-demo/seal-poc:${{ github.run_number }} seal-docker-demo \
             --build-name=${{ env.JFROG_CLI_BUILD_NAME }} \
             --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} \
             --server-id=my-server
-      
-      # -- Generate SBOM using cyclonedx-bom --
-      - name: Generate SBOM with cyclonedx-bom
-        run: |
-          echo "📝 Generating SBOM using cyclonedx-bom..."
-          mkdir -p scan-output
-          pip install cyclonedx-bom
-          cyclonedx-py requirements -i requirements.txt -o scan-output/bom.json
-          echo "SBOM file size: $(wc -c < scan-output/bom.json) bytes"
-          
-          # Create a properties file to enhance the SBOM attachment
-          echo "sbom.type=cyclonedx" > scan-output/bom.properties
-          echo "sbom.format=json" >> scan-output/bom.properties
-          echo "sbom.version=1.4" >> scan-output/bom.properties
-      
-      # -- SCAN PROJECT WITH XRAY (Using JSON format) --
-      - name: Scan Project with Xray
-        run: |
-          echo "🔍 Scanning project with Xray and associating with build..."
-          # Scan with JSON output format
-          jf scan requirements.txt --build-name=${{ env.JFROG_CLI_BUILD_NAME }} --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} --server-id=my-server --format=json || echo "Scan command failed, continuing workflow"
-      
-      # -- SCAN AND SAVE RESULTS --
-      - name: Scan and Save Results
-        run: |
-          echo "🔄 Scanning and saving results to file..."
-          # Create a scan results file
-          jf scan requirements.txt --format=json --server-id=my-server > scan-output/scan-results.json || echo "Command failed, continuing workflow"
-          
-          if [ -f scan-output/scan-results.json ]; then
-            echo "✅ Scan results saved successfully"
-            echo "Results file size: $(wc -c < scan-output/scan-results.json) bytes"
-          else
-            echo "⚠️ Failed to generate scan results file"
-          fi
-      
-      # -- UPLOAD SBOM TO ARTIFACTORY (FIXED COMMAND) --
-      - name: Upload SBOM to Artifactory
-        run: |
-          echo "📤 Uploading SBOM directly to Artifactory..."
-          jf rt upload scan-output/bom.json demo-seal/sboms/python-code-security-${{ github.run_number }}-sbom.json --build-name=${{ env.JFROG_CLI_BUILD_NAME }} --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} --server-id=my-server --props=sbom.type=cyclonedx;sbom.format=json;sbom.version=1.4
 
-
-      
-      # -- ATTACH SBOM TO BUILD INFO --
-      - name: Attach SBOM to Build Info
+      - name: Publish Build Info
         run: |
-          echo "🔗 Attaching SBOM to build info..."
-          jf rt upload scan-output/bom.json demo-seal/sboms/python-code-security-${{ github.run_number }}-sbom.json --build-name=${{ env.JFROG_CLI_BUILD_NAME }} --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} --server-id=my-server --props="sbom.type=cyclonedx\;sbom.format=json\;sbom.version=1.4"
-      
-      # -- ADD BUILD PROPERTIES FOR SBOM --
-      - name: Add Build Properties for SBOM
-        run: |
-          echo "🏷️ Adding build properties for SBOM..."
-          jf rt build-add-git ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }} --server-id=my-server
-          jf rt build-collect-env ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }} --server-id=my-server
-          # Add build properties to indicate SBOM exists
-          jf rt build-add-props ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }} "sbom.available=true;sbom.type=cyclonedx" --server-id=my-server
-      
-      # -- PUBLISH FULL BUILD INFO TO ARTIFACTORY/XRAY --
-      - name: Publish Build Info to Artifactory
-        run: |
-          echo "📦 Publishing build info to Artifactory..."
+          echo "🚀 Publishing build info to Artifactory..."
           jf rt build-publish ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }} \
             --server-id=my-server
-            
-      # -- SCAN BUILD WITH XRAY --
-      - name: Scan Build with Xray
+
+      - name: Trigger Xray Build Scan
         run: |
           echo "🛡️ Scanning build with Xray..."
-          jf build-scan ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }} --server-id=my-server
+          jf build-scan ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }} \
+            --server-id=my-server
