@@ -104,7 +104,7 @@ jobs:
       - name: Attach SBOM to Build Info
         run: |
           echo "🔗 Attaching SBOM to build info..."
-          jf rt build-add-dependencies ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }} scan-output/bom.json --server-id=my-server
+          jf rt upload scan-output/bom.json demo-seal/sboms/python-code-security-${{ github.run_number }}-sbom.json --build-name=${{ env.JFROG_CLI_BUILD_NAME }} --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} --server-id=my-server --props="sbom.type=cyclonedx\;sbom.format=json\;sbom.version=1.4"
       
       # -- ADD BUILD PROPERTIES FOR SBOM --
       - name: Add Build Properties for SBOM
