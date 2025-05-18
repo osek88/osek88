@@ -21,29 +21,33 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
+# - name: Set up Python
+#   uses: actions/setup-python@v4
+#   with:
+#     python-version: '3.9'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      # ✅ Run Seal Security in Fix Mode (Local)
-      - name: Run Seal CLI - Fix Mode (Local)
-        uses: seal-community/cli-action@latest
-        with:
-          mode: fix
-          fix_mode: local
-          token: ${{ secrets.SEAL_API_TOKEN }}
-          project: ${{ secrets.SEAL_PROJECT_ID }}
+# - name: Install dependencies
+#   run: |
+#     python -m pip install --upgrade pip
+#     pip install -r requirements.txt
+
+# - name: Run Seal CLI - Fix Mode (Local)
+#   uses: seal-community/cli-action@latest
+#   with:
+#     mode: fix
+#     fix_mode: local
+#     token: ${{ secrets.SEAL_API_TOKEN }}
+#     project: ${{ secrets.SEAL_PROJECT_ID }}
+
 
       # ✅ Build Docker Image after patching with Seal
-      - name: Build Docker Image
+      - name: Build Docker Image with Seal Fixes
         run: |
-          echo "🐳 Building Docker image..."
-          docker build -t cpart.jfrog.io/seal-docker-demo/seal-poc:${{ github.run_number }} .
+          docker build \
+          --build-arg SEAL_TOKEN=${{ secrets.SEAL_API_TOKEN }} \
+          --build-arg SEAL_PROJECT=${{ secrets.SEAL_PROJECT_ID }} \
+          -t cpart.jfrog.io/seal-docker-demo/seal-poc:${{ github.run_number }} .
+
 
       # ✅ Setup JFrog CLI
       - uses: jfrog/setup-jfrog-cli@v4
