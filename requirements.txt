@@ -1,10 +1,13 @@
-# --- Seal-compatible packages ---
-flask==1.1.2                        # 🔒 CVE-2023-30861 (Seal fixes available)
-urllib3==1.23                      # 🔒 7 vulnerabilities
-idna==2.7                          # 🔒 CVE-2024-3651
-setuptools==58.1.0                # 🔒 2 vulnerabilities
-PyYAML==5.1                        # 🔒 CVE-2020-14343, unsafe load()
-Jinja2==2.10.1                     # 🔒 5 vulnerabilities (SSTI)
-python-multipart==0.0.6           # 🔒 3 vulnerabilities
-werkzeug==2.1.2                   # 🔧 6 vulnerabilities (used by Flask)
-requests==2.19.0                   # 🕒 CVE-2018-18074, CVE-2018-18077
+# --- Core Flask App Dependencies with Seal Fixes ---
+flask==1.1.2                        # 🔒 CVE-2023-30861
+jinja2==2.10.1                      # 🔒 CVEs (SSTI)
+werkzeug==2.1.2                     # 🔧 6 vulnerabilities
+setuptools==58.1.0                 # 🔒 2 vulnerabilities
+urllib3==1.23                       # 🔒 7 vulnerabilities
+idna==2.7                           # 🔒 CVE-2024-3651
+PyYAML==5.1                         # 🔒 CVE-2020-14343
+requests==2.19.0                    # 🕒 In preparation (CVE-2018-18074, etc.)
+python-multipart==0.0.6            # 🔒 3 vulnerabilities (file handling)
+ipython==7.34.0                    # 🔒 CVE-2023-24816
+gitpython==3.1.37                  # 🔒 CVE-2024-22190
+dnspython==1.16.0                  # 🔒 CVE-2023-29483
