@@ -1,17 +1,26 @@
-name: Seal Security Scan (Fix Mode - Local)
+name: Python Code Security (Seal + Xray)
 
 on:
   push:
     branches: ["main"]
   workflow_dispatch:
 
+permissions:
+  id-token: write
+  contents: read
+  actions: read
+
+env:
+  JFROG_CLI_BUILD_NAME: Python-Code-Security
+  JF_URL: ${{ vars.JF_URL }}
+
 jobs:
-  seal_scan:
+  security-scan:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -23,6 +32,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      # -- SEAL SECURITY FIX (LOCAL) --
       - name: Run Seal CLI - Fix Mode (Local)
         uses: seal-community/cli-action@latest
         with:
@@ -30,3 +40,21 @@ jobs:
           fix_mode: local
           token: ${{ secrets.SEAL_API_TOKEN }}
           project: ${{ secrets.SEAL_PROJECT_ID }}
+
+      # -- PACKAGE CODE AS ZIP FOR XRAY SCAN --
+      - name: Create ZIP Artifact
+        run: |
+          echo "📦 Zipping Python files and requirements.txt"
+          zip -r seal-poc.zip app.py requirements.txt README.md
+
+      # -- SETUP JFROG CLI AND UPLOAD ZIP --
+      - uses: jfrog/setup-jfrog-cli@v4
+        env:
+          JF_URL: ${{ vars.JF_URL }}
+        with:
+          oidc-provider-name: ${{ vars.OIDC_PROVIDER }}
+
+      - name: Upload ZIP Artifact to Artifactory
+        run: |
+          echo "🚀 Uploading ZIP to Artifactory..."
+          jf rt upload "seal-poc.zip" demo-seal/seal-poc/seal-poc.zip
