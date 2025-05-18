@@ -1,2 +1,8 @@
 flask==1.1.2
 requests==2.19.0
+urllib3==1.23
+idna==2.7
+setuptools==58.1.0
+jinja2==2.10.1           # CVE-2019-10906
+markupsafe==1.1.1        # CVE-2021-23214, CVE-2021-23336
+pyyaml==5.1              # CVE-2020-14343
