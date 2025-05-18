@@ -29,8 +29,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install --extra-index-url https://75049205E85355B1A98440585115173D45BC2A0B:eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImJhYzE2Mjc3In0.eyJzdWIiOiI0NDZhOThkNC1hMTNhLTQzNWQtYWVhZC00NTY5OTNiMGE5MzMiLCJ0eXBlIjoidGVuYW50QWNjZXNzVG9rZW4iLCJ0ZW5hbnRJZCI6ImI1ZDU0NzA5LWFkZTYtNGMyZi05MTUzLTI5NTRmNDNlZTY0MCIsImFwcGxpY2F0aW9uSWQiOiIwMWQ3NTcxMy04NjZlLTRlZGYtODQ3Zi1lZDkwYTk0Nzg1ZGIiLCJyb2xlcyI6WyJGRVRDSC1ST0xFUy1CWS1BUEkiXSwicGVybWlzc2lvbnMiOlsiRkVUQ0gtUEVSTUlTU0lPTlMtQlktQVBJIl0sImF1ZCI6ImJhYzE2Mjc3LTVjYmUtNDA3Yy04MjM5LWRmZmY3Mzk4ZWIwZSIsImlzcyI6Imh0dHBzOi8vbG9naW4uc2VhbHNlY3VyaXR5LmlvIiwiaWF0IjoxNzQ3MzAyNzk0fQ.Ge8mYWablWtWbpDybkexCn5ABV9DzCROSCqWLygzpqlZLPwWQkFiQi0WqEegfgqf_J15uevQb4aQtIoE4UYuU6GNnB4aPj0OcgIF3FpDoRCNbXGqkK-9ojvSYKomKu6pUqv_xBEJfUaAd9gYXvg6NPrMi6du_BCurqJAyV8wfNapsKWRtQjYJDhNjerSXu5DvkEgj4brqw9IxieZx34hvta6iMQLl5enQl_EIU6psNLspa2HdOUaUdP50a30MErK9wTmcd_I6yoIiEs8PXqFjG_nR4h-fgc33z3vPKQ5i7LU9D35hESVOt1YWsrZ1waFeSVaXN-GzNUYPjbcwYJriQ@pypi.sealsecurity.io/simple -r requirements.txt
-
+          pip install -r requirements.txt
       # ✅ Run Seal Security in Fix Mode (Local)
       - name: Run Seal CLI - Fix Mode (Local)
         uses: seal-community/cli-action@latest
