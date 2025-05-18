@@ -96,12 +96,12 @@ jobs:
       - name: Upload SBOM to Artifactory
         run: |
           echo "📤 Uploading SBOM directly to Artifactory..."
-          # Fixed command syntax - removed quotes where not needed
-          jf rt upload scan-output/bom.json demo-seal/sboms/python-code-security-${{ github.run_number }}-sbom.json \
-            --build-name=${{ env.JFROG_CLI_BUILD_NAME }} \
-            --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} \
-            --server-id=my-server \
-            --props="sbom.type=cyclonedx;sbom.format=json;sbom.version=1.4"
+          jf rt upload "scan-output/bom.json" "demo-seal/sboms/python-code-security-${{ github.run_number }}-sbom.json" \
+          --build-name="${{ env.JFROG_CLI_BUILD_NAME }}" \
+          --build-number="${{ env.JFROG_CLI_BUILD_NUMBER }}" \
+          --server-id="my-server" \
+          --props="sbom.type=cyclonedx;sbom.format=json;sbom.version=1.4"
+
       
       # -- ATTACH SBOM TO BUILD INFO --
       - name: Attach SBOM to Build Info
