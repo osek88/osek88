@@ -9,7 +9,8 @@ permissions:
   contents: read
 
 env:
-  JFROG_CLI_BUILD_NAME: Python-Code-Security
+  JFROG_CLI_BUILD_NAME: python-code-security
+  JFROG_CLI_BUILD_NUMBER: ${{ github.run_number }}
   JF_URL: ${{ secrets.JF_URL }}
 
 jobs:
@@ -39,30 +40,36 @@ jobs:
           token: ${{ secrets.SEAL_API_TOKEN }}
           project: ${{ secrets.SEAL_PROJECT_ID }}
 
-      # -- PACKAGE CODE INTO A ZIP FILE --
+      # -- PACKAGE AS ZIP --
       - name: Create ZIP Artifact
         run: |
           echo "📦 Zipping Python files and requirements..."
           zip -r seal-poc.zip app.py requirements.txt README.md
 
-      # -- SETUP JFROG CLI WITH USERNAME + TOKEN --
+      # -- SETUP JFROG CLI --
       - uses: jfrog/setup-jfrog-cli@v4
-        env:
-          JF_URL: ${{ secrets.JF_URL }}
+        with:
+          jfrog-version: latest
 
-      - name: Configure JFrog CLI
+      - name: Configure JFrog CLI with username + token
         run: |
           jf config add my-server \
             --url=${{ secrets.JF_URL }} \
             --user=${{ secrets.JFROG_USER }} \
             --password=${{ secrets.JFROG_PASSWORD }} \
             --interactive=false
+          jf config use my-server
 
-      - name: Validate JFrog Connection (Optional)
-        run: jf rt ping
-
-      # -- UPLOAD ZIP TO GENERIC REPO (demo-seal) --
       - name: Upload ZIP Artifact to Artifactory
         run: |
-          echo "🚀 Uploading seal-poc.zip to Artifactory..."
-          jf rt upload "seal-poc.zip" demo-seal/seal-poc/seal-poc.zip --server-id=my-server
+          echo "🚀 Uploading seal-poc.zip to Artifactory with build info..."
+          jf rt upload "seal-poc.zip" demo-seal/seal-poc/seal-poc-${{ github.run_number }}.zip \
+            --build-name=${{ env.JFROG_CLI_BUILD_NAME }} \
+            --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} \
+            --server-id=my-server
+
+      - name: Publish Build Info to Artifactory
+        run: |
+          echo "📦 Publishing build info to Artifactory..."
+          jf rt build-publish ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }} \
+            --server-id=my-server
