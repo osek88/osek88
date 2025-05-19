@@ -11,7 +11,4 @@ projects:
       name: pip
       version: 24.3.1
       class: manifest
-    overrides:
-      PyYAML:
-        5.1:
-          use: 5.1+sp1
+    overrides: {}
