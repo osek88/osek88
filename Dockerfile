@@ -22,7 +22,7 @@ COPY .seal-actions.yml .
 RUN echo "=============== INITIAL STATE ===============" && \
     echo "Python version:" && python --version && \
     echo "Pip version:" && pip --version && \
-    echo "Initial site-packages:" && ls -la /usr/local/lib/python3.9/site-packages/ | grep -i yaml
+    echo "Initial site-packages:" && ls -la /usr/local/lib/python3.9/site-packages/ | grep -i yaml || echo "No YAML files found initially"
 
 # --- Install tools and Python deps with verbose output ---
 RUN apt-get update && \
@@ -35,9 +35,9 @@ RUN apt-get update && \
     echo "=============== DETAILED PYYAML INFO BEFORE PATCHING ===============" && \
     pip show pyyaml && \
     echo "=============== SITE-PACKAGES AFTER REQUIREMENTS ===============" && \
-    ls -la /usr/local/lib/python3.9/site-packages/ | grep -i yaml && \
+    ls -la /usr/local/lib/python3.9/site-packages/ | grep -i yaml || echo "No YAML files found in site-packages" && \
     echo "=============== INSTALLED FILES FOR PYYAML ===============" && \
-    pip show -f pyyaml | grep -i "\.py" | sort
+    pip show -f pyyaml | grep -i "\.py" | sort || echo "Could not list PyYAML files"
 
 # --- Install and run Seal CLI with verbose output ---
 RUN echo "=============== INSTALLING SEAL CLI ===============" && \
@@ -55,11 +55,11 @@ RUN echo "=============== INSTALLING SEAL CLI ===============" && \
     echo "=============== DETAILED PYYAML INFO AFTER PATCHING ===============" && \
     pip show pyyaml || echo "PyYAML not found with pip show" && \
     echo "=============== SITE-PACKAGES AFTER PATCHING ===============" && \
-    ls -la /usr/local/lib/python3.9/site-packages/ | grep -i yaml && \
+    ls -la /usr/local/lib/python3.9/site-packages/ | grep -i yaml || echo "No YAML files found in site-packages after patching" && \
     echo "=============== PIP LIST ALL YAML PACKAGES ===============" && \
-    pip list | grep -i yaml && \
+    pip list | grep -i yaml || echo "No YAML packages found in pip list" && \
     echo "=============== PYTHON IMPORT TEST ===============" && \
-    python -c "import yaml; print(f'PyYAML version: {yaml.__version__}'); print(f'PyYAML file location: {yaml.__file__}')"
+    python -c "import yaml; print(f'PyYAML version: {yaml.__version__}'); print(f'PyYAML file location: {yaml.__file__}')" || echo "Failed to import yaml module"
 
 # --- Check dist-packages location as well ---
 RUN echo "=============== CHECK DIST-PACKAGES ===============" && \
