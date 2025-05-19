@@ -11,4 +11,7 @@ projects:
       name: pip
       version: 24.3.1
       class: manifest
-    overrides: {}
+    overrides:
+      setuptools:
+        58.1.0:
+          use: 58.1.0+sp2
