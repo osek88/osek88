@@ -1,14 +1,12 @@
 # Use minimal Python image
 FROM python:3.9-slim
-
 # --- Build-time arguments for Seal ---
 ARG SEAL_TOKEN
 ARG SEAL_PROJECT
-ARG SEAL_CLI_VERSION=latest
-
 # --- Make them available to the CLI inside the container ---
 ENV SEAL_TOKEN=$SEAL_TOKEN
 ENV SEAL_PROJECT=$SEAL_PROJECT
+ENV SEAL_CLI_VERSION=latest
 
 # --- Set working directory ---
 WORKDIR /app
@@ -25,15 +23,14 @@ RUN echo "=============== INITIAL STATE ===============" && \
     echo "Initial site-packages:" && ls -la /usr/local/lib/python3.9/site-packages/ | grep -i yaml || echo "No YAML files found initially"
 
 # --- Install tools and Python deps with verbose output ---
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends unzip curl && \
-    pip install --no-cache-dir --upgrade pip && \
+RUN apt-get update && apt-get install -y unzip curl && \
+    pip install --upgrade pip && \
     echo "=============== INSTALLING REQUIREMENTS ===============" && \
-    pip install -v --no-cache-dir -r requirements.txt && \
+    pip install -v -r requirements.txt && \
     echo "=============== PIP LIST AFTER REQUIREMENTS ===============" && \
     pip list && \
     echo "=============== DETAILED PYYAML INFO BEFORE PATCHING ===============" && \
-    pip show pyyaml && \
+    pip show pyyaml || echo "PyYAML not found with pip show" && \
     echo "=============== SITE-PACKAGES AFTER REQUIREMENTS ===============" && \
     ls -la /usr/local/lib/python3.9/site-packages/ | grep -i yaml || echo "No YAML files found in site-packages" && \
     echo "=============== INSTALLED FILES FOR PYYAML ===============" && \
@@ -41,11 +38,11 @@ RUN apt-get update && \
 
 # --- Install and run Seal CLI with verbose output ---
 RUN echo "=============== INSTALLING SEAL CLI ===============" && \
-    curl -fsSL "https://github.com/seal-community/cli/releases/download/v${SEAL_CLI_VERSION}/seal-linux-amd64-${SEAL_CLI_VERSION}.zip" -o /tmp/seal.zip && \
+    curl -fsSL https://github.com/seal-community/cli/releases/download/${SEAL_CLI_VERSION}/seal-linux-amd64-${SEAL_CLI_VERSION}.zip -o /tmp/seal.zip && \
     unzip /tmp/seal.zip -d /usr/local/bin && \
     chmod +x /usr/local/bin/seal && \
     echo "=============== SEAL CLI VERSION ===============" && \
-    seal --version && \
+    seal --version || echo "Could not get Seal CLI version" && \
     echo "=============== SEAL CONFIG ===============" && \
     cat .seal-actions.yml && \
     echo "=============== RUNNING SEAL FIX ===============" && \
@@ -85,9 +82,15 @@ except pkg_resources.DistributionNotFound:\n\
     echo "=============== RUNNING DIAGNOSTIC SCRIPT ===============" && \
     python /app/diagnose_yaml.py
 
-# --- Cleanup for final image ---
-RUN apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/seal.zip
+# --- Install and run Seal CLI in local mode to apply sealed patches (original step) ---
+# This is commented out because we already did it with verbose output above
+# RUN curl -fsSL https://github.com/seal-community/cli/releases/download/${SEAL_CLI_VERSION}/seal-linux-amd64-${SEAL_CLI_VERSION}.zip -o /tmp/seal.zip && \
+#     unzip /tmp/seal.zip -d /usr/local/bin && \
+#     seal fix --mode local && \
+#     rm -f /tmp/seal.zip /usr/local/bin/seal
+
+# --- Cleanup as in original Dockerfile ---
+RUN rm -f /tmp/seal.zip /usr/local/bin/seal
 
 # --- Run the app ---
 CMD ["python", "app.py"]
