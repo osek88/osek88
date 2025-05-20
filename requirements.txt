@@ -12,3 +12,5 @@ ipython==7.34.0                     # 🔒 CVE-2023-24816
 gitpython==3.1.37                   # 🔒 CVE-2024-22190
 dnspython==1.16.0                   # 🔒 CVE-2023-29483
 lxml==4.6.2
+libwebp==1.2.0  # 🔥 CVE-2023-4863 (Critical: Heap buffer overflow in libwebp)
+
