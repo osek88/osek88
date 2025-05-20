@@ -21,36 +21,17 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-# - name: Set up Python
-#   uses: actions/setup-python@v4
-#   with:
-#     python-version: '3.9'
-
-# - name: Install dependencies
-#   run: |
-#     python -m pip install --upgrade pip
-#     pip install -r requirements.txt
-
-# - name: Run Seal CLI - Fix Mode (Local)
-#   uses: seal-community/cli-action@latest
-#   with:
-#     mode: fix
-#     fix_mode: local
-#     token: ${{ secrets.SEAL_API_TOKEN }}
-#     project: ${{ secrets.SEAL_PROJECT_ID }}
-
-
       # ✅ Build Docker Image after patching with Seal
       - name: Build Docker Image with Seal Fixes
         run: |
           docker build \
-          --build-arg SEAL_TOKEN=${{ secrets.SEAL_API_TOKEN }} \
-          --build-arg SEAL_PROJECT=${{ secrets.SEAL_PROJECT_ID }} \
-          -t cpart.jfrog.io/seal-docker-demo/seal-poc:${{ github.run_number }} .
-
+            --build-arg SEAL_TOKEN=${{ secrets.SEAL_API_TOKEN }} \
+            --build-arg SEAL_PROJECT=${{ secrets.SEAL_PROJECT_ID }} \
+            -t cpart.jfrog.io/seal-docker-demo/seal-poc:${{ github.run_number }} .
 
       # ✅ Setup JFrog CLI
-      - uses: jfrog/setup-jfrog-cli@v4
+      - name: Setup JFrog CLI
+        uses: jfrog/setup-jfrog-cli@v4
         with:
           version: latest
 
@@ -72,9 +53,16 @@ jobs:
             --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} \
             --server-id=my-server
 
-      # ✅ Publish Build Info
+      # ✅ Publish Build Info to Artifactory
       - name: Publish Build Info to Artifactory
         run: |
           echo "🚀 Publishing build info to Artifactory..."
           jf rt build-publish ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }} \
+            --server-id=my-server
+
+      # ✅ Trigger Xray Violation Scan
+      - name: Trigger Xray Violation Scan
+        run: |
+          echo "🔍 Triggering Xray violation scan..."
+          jf bs ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }} \
             --server-id=my-server
