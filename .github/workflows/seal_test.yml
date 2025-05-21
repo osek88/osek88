@@ -11,6 +11,8 @@ permissions:
 env:
   JFROG_CLI_BUILD_NAME: seal-docker-security
   JFROG_CLI_BUILD_NUMBER: ${{ github.run_number }}
+  JFROG_CLI_BUILD_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+  JFROG_CLI_BUILD_PROJECT: demo
   JF_URL: ${{ secrets.JF_URL }}
 
 jobs:
@@ -51,24 +53,21 @@ jobs:
           jf rt docker-push cpart.jfrog.io/seal-docker-demo/seal-poc:${{ github.run_number }} seal-docker-demo \
             --build-name=${{ env.JFROG_CLI_BUILD_NAME }} \
             --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} \
-            --server-id=my-server
+            --project=demo
 
-      # ✅ Collect Build Environment Info (important for Xray traceability)
+      # ✅ Collect Build Environment Info
       - name: Collect Build Environment Info
         run: |
-              jf rt build-collect-env --server-id=my-server ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }}
-
+          jf rt build-collect-env --project=demo ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }}
 
       # ✅ Publish Build Info to Artifactory
       - name: Publish Build Info to Artifactory
         run: |
           echo "🚀 Publishing build info to Artifactory..."
-          jf rt build-publish ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }} \
-            --server-id=my-server
+          jf rt build-publish ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }} --project=demo
 
       # ✅ Trigger Xray Violation Scan
       - name: Trigger Xray Violation Scan
         run: |
           echo "🔍 Triggering Xray violation scan..."
-          jf bs ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }} \
-            --server-id=my-server
+          jf rt build-scan ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }} --project=demo
