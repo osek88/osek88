@@ -56,7 +56,7 @@ jobs:
       # ✅ Collect Build Environment Info (important for Xray traceability)
       - name: Collect Build Environment Info
         run: |
-          jf rt build-collect-env ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }} --server-id=my-server
+              jf rt build-collect-env --server-id=my-server ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }}
 
 
       # ✅ Publish Build Info to Artifactory
