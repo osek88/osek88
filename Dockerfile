@@ -18,13 +18,10 @@ COPY requirements.txt .
 COPY app.py .
 COPY .seal-actions.yml .
 
-# --- Install tools and Python dependencies ---
-RUN pip install --upgrade pip && \
-    pip install -r requirements.txt && \
-    pip cache purge && \
-    find /root/.cache -type f -delete && \
-    rm -rf /root/.cache /root/.local ~/.cache ~/.local
-
+# --- Install system tools and Python dependencies ---
+RUN apt-get update && apt-get install -y unzip curl && \
+    pip install --upgrade pip && \
+    pip install -r requirements.txt
 
 # --- Install and run Seal CLI in local mode and upload scan results ---
 RUN curl -fsSL https://github.com/seal-community/cli/releases/download/${SEAL_CLI_VERSION}/seal-linux-amd64-${SEAL_CLI_VERSION}.zip -o /tmp/seal.zip && \
@@ -32,6 +29,11 @@ RUN curl -fsSL https://github.com/seal-community/cli/releases/download/${SEAL_CL
     chmod +x /usr/local/bin/seal && \
     SEAL_TOKEN=$SEAL_TOKEN SEAL_PROJECT=$SEAL_PROJECT seal fix --mode local --upload-scan-results && \
     rm -f /tmp/seal.zip /usr/local/bin/seal
+
+# --- Final cleanup: remove all caches to avoid .whl SBOM duplication ---
+RUN pip cache purge && \
+    find /root/.cache -type f -delete && \
+    rm -rf /root/.cache /root/.local ~/.cache ~/.local
 
 # --- Run the app ---
 CMD ["python", "app.py"]
