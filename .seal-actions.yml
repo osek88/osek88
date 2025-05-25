@@ -12,6 +12,6 @@ projects:
       version: 24.3.1
       class: manifest
     overrides:
-      PyYAML:
-        5.1:
-          use: 5.1+sp1
+      dnspython:
+        1.16.0:
+          use: 1.16.0+sp1
