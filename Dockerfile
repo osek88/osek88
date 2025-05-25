@@ -21,7 +21,8 @@ COPY .seal-actions.yml .
 # --- Install tools and Python dependencies ---
 RUN apt-get update && apt-get install -y unzip curl && \
     pip install --upgrade pip && \
-    pip install -r requirements.txt
+    pip install -r requirements.txt && \
+    pip cache purge && rm -rf /root/.cache/pip ~/.cache/pip
 
 # --- Install and run Seal CLI in local mode and upload scan results ---
 RUN curl -fsSL https://github.com/seal-community/cli/releases/download/${SEAL_CLI_VERSION}/seal-linux-amd64-${SEAL_CLI_VERSION}.zip -o /tmp/seal.zip && \
