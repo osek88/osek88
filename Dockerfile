@@ -18,16 +18,16 @@ COPY requirements.txt .
 COPY app.py .
 COPY .seal-actions.yml .
 
-# --- Install tools and Python dependencies ---
+# --- Install tools, dependencies, run Seal fix, and clean up in one layer ---
 RUN apt-get update && apt-get install -y unzip curl && \
     pip install --upgrade pip && \
-    pip install -r requirements.txt
-
-# --- Install and run Seal CLI in local mode and upload scan results ---
-RUN curl -fsSL https://github.com/seal-community/cli/releases/download/${SEAL_CLI_VERSION}/seal-linux-amd64-${SEAL_CLI_VERSION}.zip -o /tmp/seal.zip && \
+    pip install -r requirements.txt && \
+    curl -fsSL https://github.com/seal-community/cli/releases/download/${SEAL_CLI_VERSION}/seal-linux-amd64-${SEAL_CLI_VERSION}.zip -o /tmp/seal.zip && \
     unzip /tmp/seal.zip -d /usr/local/bin && \
     chmod +x /usr/local/bin/seal && \
     SEAL_TOKEN=$SEAL_TOKEN SEAL_PROJECT=$SEAL_PROJECT seal fix --mode local --upload-scan-results && \
+    # Uninstall the original vulnerable packages here
+    pip uninstall -y dnspython && \
     rm -f /tmp/seal.zip /usr/local/bin/seal
 
 # --- Run the app ---
